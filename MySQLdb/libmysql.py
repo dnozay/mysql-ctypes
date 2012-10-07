@@ -1,4 +1,5 @@
 import ctypes
+import ctypes.util
 
 
 class MYSQL(ctypes.Structure):
@@ -43,16 +44,10 @@ MYSQL_OPT_CONNECT_TIMEOUT = 0
 MYSQL_INIT_COMMAND = 3
 
 c = None
-# Prefer the higher version, obscure.
-for lib in ["libmysqlclient.so.16", "libmysqlclient.so.15", "mysqlclient", "libmysqlclient.18.dylib"]:
-    try:
-        c = ctypes.CDLL(lib)
-    except OSError:
-        pass
-    else:
-        break
-if c is None:
+libmysqlclient_name = ctypes.util.find_library("mysqlclient")
+if libmysqlclient_name is None:
     raise ImportError("Can't find a libmysqlclient")
+c = ctypes.cdll.LoadLibrary(libmysqlclient_name)
 
 c.mysql_init.argtypes = [MYSQL_P]
 c.mysql_init.restype = MYSQL_P
