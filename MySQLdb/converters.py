@@ -25,6 +25,9 @@ def literal_encoder(connection, obj):
 def datetime_encoder(connection, obj):
     return connection.string_literal(obj.strftime("%Y-%m-%d %H:%M:%S"))
 
+def set_encoder(connection, obj):
+    return connection.string_literal(','.join(obj))
+
 _simple_field_encoders = {
     type(None): lambda connection, obj: "NULL",
     int: literal_encoder,
@@ -32,6 +35,7 @@ _simple_field_encoders = {
     unicode: unicode_to_quoted_sql,
     str: object_to_quoted_sql,
     datetime: datetime_encoder,
+    set: set_encoder,
 }
 
 def simple_encoder(obj):
@@ -74,6 +78,9 @@ def timestamp_decoder(value):
 def str_to_unicode(connection):
     return lambda value: value.decode(connection.character_set_name(), 'replace')
 
+def set_decoder(value):
+    return set(value.split(','))
+
 _simple_field_decoders = {
     field_types.TINY: int,
     field_types.SHORT: int,
@@ -96,6 +103,8 @@ _simple_field_decoders = {
     field_types.DATE: date_decoder,
     field_types.TIME: time_decoder,
     field_types.TIMESTAMP: timestamp_decoder,
+
+    field_types.SET: set_decoder,
 }
 
 _advanced_field_decoders = {
