@@ -3,7 +3,7 @@ from time import localtime
 
 from MySQLdb.compat import string_literal
 from MySQLdb.connection import connect
-from MySQLdb.exceptions import (Warning, Error, InterfaceError, DatabaseError,
+from MySQLdb.libmysql_exceptions import (Warning, Error, InterfaceError, DatabaseError,
     DataError, OperationalError, IntegrityError, InternalError,
     ProgrammingError, NotSupportedError)
 from MySQLdb.types import BINARY, DATETIME, NUMBER, ROWID, STRING

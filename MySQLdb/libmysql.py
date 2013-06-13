@@ -127,6 +127,9 @@ c.mysql_free_result.restype = None
 c.mysql_character_set_name.argtypes = [MYSQL_P]
 c.mysql_character_set_name.restype = ctypes.c_char_p
 
+c.mysql_ping.argtypes = [MYSQL_P]
+c.mysql_ping.restype = None
+
 # Second thing is an enum, it looks to be a long on Linux systems.
 c.mysql_options.argtypes = [MYSQL_P, ctypes.c_long, ctypes.c_char_p]
 c.mysql_options.restype = ctypes.c_int

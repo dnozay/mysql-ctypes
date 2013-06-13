@@ -38,3 +38,6 @@ class TestConnection(BaseMySQLTests):
         with py.test.raises(connection.InterfaceError) as exc:
             connection.rollback()
         assert str(exc.value) == "(0, '')"
+
+    def test_ping(self, connection):
+        connection.ping()

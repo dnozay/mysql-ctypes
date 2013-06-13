@@ -26,10 +26,8 @@ class Cursor(object):
 
         self._result = None
         self._executed = None
+        self._last_executed = None
         self.rowcount = -1
-
-    def __del__(self):
-        self.close()
 
     def _check_closed(self):
         if not self.connection or not self.connection._db:
@@ -44,9 +42,10 @@ class Cursor(object):
             self._result.close()
             self._result = None
         self.rowcount = -1
+        self._executed = self._last_executed = None
 
     def _query(self, query):
-        self._executed = query
+        self._executed = self._last_executed = query
         self.connection._check_closed()
         r = libmysql.c.mysql_real_query(self.connection._db, ctypes.c_char_p(query), len(query))
         if r:
@@ -94,9 +93,7 @@ class Cursor(object):
 
     def close(self):
         self.connection = None
-        if self._result is not None:
-            self._result.close()
-            self._result = None
+        self._clear()
 
     def execute(self, query, args=None):
         self._check_closed()
@@ -143,7 +140,6 @@ class Cursor(object):
         query %= self._escape_data(args)
         self._query(query)
         return args
-
 
     def fetchall(self):
         self._check_executed()
@@ -217,7 +213,6 @@ class Result(object):
         if not self._result:
             cursor.lastrowid = libmysql.c.mysql_insert_id(cursor.connection._db)
             return
-
 
         self.description = self._describe()
         self.row_decoders = [
@@ -302,7 +297,9 @@ class Result(object):
                     break
                 self.rows.append(row)
         if self.row_index >= len(self.rows):
-            return []
+            # MySQLdb compatbility: There are applications checking for tuple
+            #                       instead of empty lists or even an iterator...
+            return ()
         row_end = self.row_index + size
         if row_end >= len(self.rows):
             row_end = len(self.rows)

@@ -21,13 +21,14 @@ class Connection(object):
         error_codes.ROW_IS_REFERENCED_2: "IntegrityError",
     }
 
-    from MySQLdb.exceptions import (Warning, Error, InterfaceError,
+    from MySQLdb.libmysql_exceptions import (Warning, Error, InterfaceError,
         DataError, DatabaseError, OperationalError, IntegrityError,
         InternalError, ProgrammingError, NotSupportedError)
 
     def __init__(self, host=None, user=None, passwd=None, db=None, port=0,
         client_flag=0, charset=None, init_command=None, connect_timeout=None,
-        sql_mode=None, encoders=None, decoders=None, use_unicode=True):
+        sql_mode=None, encoders=None, decoders=None, use_unicode=True,
+        conv=None):
 
         self._db = libmysql.c.mysql_init(None)
 
@@ -54,8 +55,14 @@ class Connection(object):
             encoders = converters.DEFAULT_ENCODERS
         if decoders is None:
             decoders = converters.DEFAULT_DECODERS
-        self.encoders = encoders
-        self.decoders = decoders
+        self.real_encoders = encoders
+        self.real_decoders = decoders
+
+        # MySQLdb compatibility.
+        if conv is not None:
+            self.real_decoders.insert(1, lambda conn, field: conv.get(field[1]))
+        conv = conv or converters.conversions
+        self.encoders = dict(conv.iteritems())
 
         if charset is not None:
             res = libmysql.c.mysql_set_character_set(self._db, charset)
@@ -123,9 +130,9 @@ class Connection(object):
         if cursor_class is None:
             cursor_class = cursors.Cursor
         if encoders is None:
-            encoders = self.encoders[:]
+            encoders = self.real_encoders[:]
         if decoders is None:
-            decoders = self.decoders[:]
+            decoders = self.real_decoders[:]
         return cursor_class(self, encoders=encoders, decoders=decoders)
 
     def string_literal(self, obj):
@@ -142,6 +149,11 @@ class Connection(object):
     def get_server_info(self):
         self._check_closed()
         return libmysql.c.mysql_get_server_info(self._db)
+
+    def ping(self):
+        res = libmysql.c.mysql_ping(self._db)
+        if res:
+            self._exception()
 
 def connect(*args, **kwargs):
     return Connection(*args, **kwargs)
