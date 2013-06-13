@@ -31,3 +31,10 @@ Or use ``tox`` to automatically test it against CPython 2.6 and 2.7, as well as
 PyPy::
 
     $ tox
+
+You may need to create the test database with::
+
+    $ mysql
+    mysql> create database test_mysqldb;
+
+
